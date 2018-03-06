@@ -1,0 +1,122 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+
+#include "log.h"
+#define AUDITLOG_BUFSIZE 2048
+
+char auditlog_buf[AUDITLOG_BUFSIZE];
+
+static void parse_part_a(char *start, char *end)
+{
+	char *str;
+
+	str = start;
+	while (str <= end) {
+		if ()
+		str++;
+	}
+}
+
+static void parse_part_b(char *start, char *end)
+{}
+
+static void parse_part_c(char *start, char *end)
+{}
+
+static void parse_part_e(char *start, char *end)
+{}
+
+static void parse_part_f(char *start, char *end)
+{}
+
+static void parse_part_h(char *start, char *end)
+{}
+int parse_auditlog(char *fname)
+{
+	int fd;
+	int n, count = 0;
+	char *buf;
+	char part;
+	char prev_part = 0;
+	char *part_a_start = NULL, *part_a_end = NULL;
+	char *part_b_start = NULL, *part_b_end = NULL;
+	char *part_c_start = NULL, *part_c_end = NULL;
+	char *part_e_start = NULL, *part_e_end = NULL;
+	char *part_f_start = NULL, *part_f_end = NULL;
+	char *part_h_start = NULL, *part_h_end = NULL;
+	
+	if ((fd = open(fname, O_RDONLY)) == -1) {
+		logg("[parse_auditlog]failed to open %s", fname);
+		return -1;
+	}
+
+	buf = auditlog_buf;
+	while ((n = read(fd, buf, AUDITLOG_BUFSIZE)) > 0) {
+		buf += n;
+		count += n;
+	}
+
+	if (n == -1 || auditlog_buf[count - 4] != 'Z') {
+		logg("[parse_auditlog]failed to read %s", fname);
+		return -1;
+	}
+
+	buf = auditlog_buf;
+	while (buf < auditlog_buf + count) {
+		char *start;
+
+		/* for example: --11e8642c-F-- */
+		if (*buf == '-' && *(buf + 1) == '-' && *(buf + 10) == '-' && *(buf + 12) == '-' && *(buf + 13) == '-') {
+			part = *(buf + 11);
+
+			switch (prev_part) {
+				case 'A': part_a_end = buf - 1; break;
+				case 'B': part_b_end = buf - 1; break;
+				case 'C': part_c_end = buf - 1; break;
+				case 'E': part_e_end = buf - 1; break;
+				case 'F': part_f_end = buf - 1; break;
+				case 'H': part_h_end = buf - 1; break;
+				case 0  : break;
+				default : goto out;
+			}
+			
+			buf += 15;
+			switch (part) {
+				case 'A': part_a_start = buf; break;
+				case 'B': part_b_start = buf; break;
+				case 'C': part_c_start = buf; break;
+				case 'E': part_e_start = buf; break;
+				case 'F': part_f_start = buf; break;
+				case 'H': part_h_start = buf; break;
+				case 'Z': break;
+			}
+
+			prev_part = part;
+		}
+
+		buf++;
+	}
+
+	if (part_a_start != NULL && part_a_end != NULL)
+		parse_part_a(part_a_start, part_a_end);
+
+	if (part_b_start != NULL && part_b_end != NULL)
+		parse_part_b(part_b_start, part_b_end);
+
+	if (part_c_start != NULL && part_c_end != NULL)
+		parse_part_c(part_c_start, part_c_end);
+
+	if (part_e_start != NULL && part_e_end != NULL)
+		parse_part_e(part_e_start, part_e_end);
+
+	if (part_f_start != NULL && part_f_end != NULL)
+		parse_part_f(part_f_start, part_f_end);
+
+	if (part_h_start != NULL && part_h_end != NULL)
+		parse_part_h(part_h_start, part_h_end);
+
+out: 	;
+}
